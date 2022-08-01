@@ -166,6 +166,8 @@ for line in lines:
     elif 'config.Data.outLFNDirBase' in sk_line:
       out.write("config.Data.outLFNDirBase = '/store/user/%s/SKFlat/"+era+"/' % (getUsername())\n")
 
+    elif 'config.Site.blacklist' in sk_line:
+      out.write("config.Site.blacklist = ['T2_RU_IHEP']\n")
     elif 'config.Site.storageSite' in sk_line:
       out.write("config.Site.storageSite = 'T3_KR_KNU'\n")
     else:

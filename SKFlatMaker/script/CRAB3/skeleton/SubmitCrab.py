@@ -23,4 +23,6 @@ config.Data.outLFNDirBase = '/store/user/%s/SKFlat/' % (getUsername())
 config.Data.publication = False
 config.Data.outputDatasetTag = 'SKFlatMaker_2017_v1'
 
+#config.Site.whitelist = ['T2_CH_CERN', 'T2_US*', 'T2_DE_RWTH', 'T2_DE_DESY']
+config.Site.blacklist = ['T2_RU_IHEP']
 config.Site.storageSite = 'T3_KR_KISTI'
