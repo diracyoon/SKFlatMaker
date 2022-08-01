@@ -1,0 +1,8 @@
+#Madgraph
+#/tt012j_Vcb_NLO_CP5_FXFX_Summer20UL18/shin-RunIISummer20UL18wmMiniAOD-134aef829a4dada8fe65e7e30dd0c72d/USER 230636
+
+#Powheg initial sample
+/ttj_Vcb_NLO_FXFX_Summer20UL18_LHEGEN/shin-RunIISummer20UL18wmMiniAOD-134aef829a4dada8fe65e7e30dd0c72d/USER 635500
+
+#Powheg extra sample
+/ttj_Vcb_NLO_FXFX_Summer20UL18_GEN_extra/shin-RunIISummer20UL18wmMiniAOD-134aef829a4dada8fe65e7e30dd0c72d/USER 1200000

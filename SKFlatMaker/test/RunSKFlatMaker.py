@@ -179,10 +179,12 @@ process.recoTree.StoreHLTObjectFlag = False ##FIXME
 # -- Objects without Corrections -- # 
 process.recoTree.Muon = cms.untracked.InputTag("slimmedMuons") # -- miniAOD -- #
 process.recoTree.Electron = cms.untracked.InputTag("slimmedElectrons") # -- miniAOD -- #
+process.recoTree.Tau = cms.untracked.InputTag("slimmedTaus") # -- miniAOD -- #                                                                                                                        
 process.recoTree.Photon = cms.untracked.InputTag("slimmedPhotons") # -- miniAOD -- #
 process.recoTree.Jet = cms.untracked.InputTag("slimmedJets") # -- miniAOD -- #
 process.recoTree.FatJet = cms.untracked.InputTag("slimmedJetsAK8")
 process.recoTree.MET = cms.InputTag("slimmedMETs")
+process.recoTree.PuppiMET = cms.InputTag("slimmedMETsPuppi")
 process.recoTree.GenParticle = cms.untracked.InputTag("prunedGenParticles") # -- miniAOD -- #
 
 for key in weightmap:
@@ -192,6 +194,7 @@ for key in weightmap:
     setattr(process.recoTree,"weight_"+key,cms.untracked.vint32(weightmap[key]))
 
 process.recoTree.rho = cms.untracked.InputTag("fixedGridRhoFastjetAll")
+process.recoTree.rhoNC = cms.untracked.InputTag("fixedGridRhoFastjetCentralNeutral")
 process.recoTree.conversionsInputTag = cms.untracked.InputTag("reducedEgamma:reducedConversions") # -- miniAOD -- #
 
 # -- for Track & Vertex -- #
@@ -206,9 +209,11 @@ process.recoTree.ApplyFilter = False
 # -- Store Flags -- #
 process.recoTree.StoreMuonFlag = True
 process.recoTree.StoreElectronFlag = True
+process.recoTree.StoreTauFlag = True
 process.recoTree.StorePhotonFlag = True # -- photon part should be updated! later when it is necessary -- #
 process.recoTree.StoreJetFlag = True
 process.recoTree.StoreMETFlag = True
+process.recoTree.StorePuppiMETFlag = True
 process.recoTree.StoreGENFlag = isMC
 process.recoTree.KeepAllGen = isMC
 process.recoTree.StoreLHEFlag = isMC
@@ -320,7 +325,7 @@ if Is2016preVFP:
   #################
   bJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2016.pb")
   bJetNN.outputFormulas = cms.vstring(["at(0)*0.31976690888404846+1.047176718711853","0.5*(at(2)-at(1))*0.31976690888404846"])
-  cJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2016.pb")
+  cJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/creg_training_2016.pb")
   cJetNN.outputFormulas = cms.vstring(["at(0)*0.28862622380256653+0.9908722639083862","0.5*(at(2)-at(1))*0.28862622380256653"])
 
   #################
@@ -332,6 +337,15 @@ if Is2016preVFP:
   runMetCorAndUncFromMiniAOD(process,
                            isData=(not isMC),
                            )
+
+  from PhysicsTools.PatAlgos.slimming.puppiForMET_cff import makePuppiesFromMiniAOD
+  makePuppiesFromMiniAOD( process, True );
+  runMetCorAndUncFromMiniAOD(process,
+                             isData=(not isMC),
+                             metType="Puppi",
+                             postfix="Puppi",
+                             jetFlavor="AK4PFPuppi",
+                             )
 
   #########################
   #### L1Prefire reweight
@@ -364,6 +378,7 @@ if Is2016preVFP:
     taggingMode    = cms.bool(True)
   )
 
+
   ###########
   #### Path
   ###########
@@ -371,7 +386,10 @@ if Is2016preVFP:
   process.p = cms.Path(
     process.egammaPostRecoSeq *
     process.jecSequence *
-    process.fullPatMetSequence
+    process.fullPatMetSequence *
+    process.egmPhotonIDSequence *
+    process.puppiMETSequence *
+    process.fullPatMetSequencePuppi
   )
   process.p *= process.BadPFMuonFilterUpdateDz
   if isMC:
@@ -459,7 +477,7 @@ if Is2016postVFP:
   #################
   bJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2016.pb")
   bJetNN.outputFormulas = cms.vstring(["at(0)*0.31976690888404846+1.047176718711853","0.5*(at(2)-at(1))*0.31976690888404846"])
-  cJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2016.pb")
+  cJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/creg_training_2016.pb")
   cJetNN.outputFormulas = cms.vstring(["at(0)*0.28862622380256653+0.9908722639083862","0.5*(at(2)-at(1))*0.28862622380256653"])
 
   #################
@@ -472,6 +490,14 @@ if Is2016postVFP:
                            isData=(not isMC),
                            )
 
+  from PhysicsTools.PatAlgos.slimming.puppiForMET_cff import makePuppiesFromMiniAOD
+  makePuppiesFromMiniAOD( process, True );
+  runMetCorAndUncFromMiniAOD(process,
+                             isData=(not isMC),
+                             metType="Puppi",
+                             postfix="Puppi",
+                             jetFlavor="AK4PFPuppi",
+                             )
 
   #########################
   #### L1Prefire reweight
@@ -511,7 +537,10 @@ if Is2016postVFP:
   process.p = cms.Path(
     process.egammaPostRecoSeq *
     process.jecSequence *
-    process.fullPatMetSequence
+    process.fullPatMetSequence *
+    process.egmPhotonIDSequence *
+    process.puppiMETSequence *
+    process.fullPatMetSequencePuppi
   )
   process.p *= process.BadPFMuonFilterUpdateDz
   if isMC:
@@ -599,7 +628,7 @@ elif Is2017:
   #################
   bJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2017.pb")
   bJetNN.outputFormulas = cms.vstring(["at(0)*0.28225210309028625+1.055067777633667","0.5*(at(2)-at(1))*0.28225210309028625"])
-  cJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2017.pb")
+  cJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/creg_training_2017.pb")
   cJetNN.outputFormulas = cms.vstring(["at(0)*0.24718524515628815+0.9927206635475159","0.5*(at(2)-at(1))*0.24718524515628815"])
 
   #################
@@ -611,6 +640,15 @@ elif Is2017:
   runMetCorAndUncFromMiniAOD(process,
                            isData=(not isMC),
                            )
+
+  from PhysicsTools.PatAlgos.slimming.puppiForMET_cff import makePuppiesFromMiniAOD
+  makePuppiesFromMiniAOD( process, True );
+  runMetCorAndUncFromMiniAOD(process,
+                             isData=(not isMC),
+                             metType="Puppi",
+                             postfix="Puppi",
+                             jetFlavor="AK4PFPuppi",
+                             )
 
   #########################
   #### L1Prefire reweight
@@ -650,7 +688,10 @@ elif Is2017:
   process.p = cms.Path(
     process.egammaPostRecoSeq *
     process.jecSequence *
-    process.fullPatMetSequence
+    process.fullPatMetSequence *
+    process.egmPhotonIDSequence *
+    process.puppiMETSequence *
+    process.fullPatMetSequencePuppi
   )
   process.p *= process.BadPFMuonFilterUpdateDz
   if isMC:
@@ -663,7 +704,7 @@ elif Is2017:
   ## BJetEnergyRegression
   process.p *= process.bJetCorrSeq
 
-  #process.p *= process.recoTree
+  process.p *= process.recoTree
 
 elif Is2018:
 
@@ -734,6 +775,14 @@ elif Is2018:
   process.recoTree.AK8Jet_JER_SF_filepath    = cms.string('SKFlatMaker/SKFlatMaker/data/JRDatabase/textFiles/Summer19UL18_JRV2_MC/Summer19UL18_JRV2_MC_SF_AK8PFPuppi.txt')
 
   #################
+  #### BJetEnergyRegression
+  #################
+  bJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/breg_training_2018.pb")
+  bJetNN.outputFormulas = cms.vstring(["at(0)*0.27912887930870056+1.0545977354049683","0.5*(at(2)-at(1))*0.27912887930870056"])
+  cJetNN.weightFile =  cms.FileInPath("PhysicsTools/NanoAOD/data/creg_training_2018.pb")
+  cJetNN.outputFormulas = cms.vstring(["at(0)*0.24325256049633026+0.993854820728302","0.5*(at(2)-at(1))*0.24325256049633026"])
+
+  #################
   #### Update MET
   #### https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETUncertaintyPrescription
   #### This is independent of jecSequence, but it rather reapply JEC/JER using GT withing this MET corrector module
@@ -742,6 +791,15 @@ elif Is2018:
   runMetCorAndUncFromMiniAOD(process,
                            isData=(not isMC),
                            )
+
+  from PhysicsTools.PatAlgos.slimming.puppiForMET_cff import makePuppiesFromMiniAOD
+  makePuppiesFromMiniAOD( process, True );
+  runMetCorAndUncFromMiniAOD(process,
+                             isData=(not isMC),
+                             metType="Puppi",
+                             postfix="Puppi",
+                             jetFlavor="AK4PFPuppi",
+                             )
 
   #########################
   #### L1Prefire reweight
@@ -781,7 +839,10 @@ elif Is2018:
   process.p = cms.Path(
     process.egammaPostRecoSeq *
     process.jecSequence *
-    process.fullPatMetSequence
+    process.fullPatMetSequence *
+    process.egmPhotonIDSequence *
+    process.puppiMETSequence *
+    process.fullPatMetSequencePuppi
   )
   process.p *= process.BadPFMuonFilterUpdateDz
   

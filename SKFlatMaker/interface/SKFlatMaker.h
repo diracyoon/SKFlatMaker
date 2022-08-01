@@ -35,6 +35,15 @@
 #include "DataFormats/MuonReco/interface/MuonCosmicCompatibility.h" // -- Variables shows how muon is cosmic-like
 #include "SKFlatMaker/SKFlatMaker/interface/RoccoR.h"
 
+/////////////////////
+// -- For Taus -- //
+/////////////////////
+
+#include "DataFormats/PatCandidates/interface/Tau.h"
+#include "DataFormats/TauReco/interface/PFTauDiscriminator.h"
+#include "DataFormats/TauReco/interface/PFTau.h"
+
+
 /////////////////////////
 // -- For Electrons -- //
 /////////////////////////
@@ -44,7 +53,7 @@
 #include "DataFormats/EgammaCandidates/interface/ConversionFwd.h"
 #include "DataFormats/EgammaCandidates/interface/Conversion.h"
 #include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
-
+#include "DataFormats/L1Trigger/interface/EGamma.h"
 
 ///////////////////
 // -- For MET -- //
@@ -187,8 +196,10 @@ class SKFlatMaker : public edm::EDAnalyzer
   
   virtual void fillPrimaryVertex(const edm::Event &iEvent);  // fill primary vertex information
   virtual void fillMET(const edm::Event &iEvent);            // fill MET information
+  virtual void fillPuppiMET(const edm::Event &iEvent);
   virtual void fillPhotons(const edm::Event &iEvent);
   virtual void fillMuons(const edm::Event &iEvent, const edm::EventSetup& iSetup);
+  virtual void fillTaus(const edm::Event &iEvent, const edm::EventSetup& iSetup);
   virtual void fillElectrons(const edm::Event &iEvent, const edm::EventSetup& iSetup);
   virtual void fillJet(const edm::Event &iEvent);            // fill jet and b-tagging information
   virtual void fillFatJet(const edm::Event &iEvent);            // fill jet and b-tagging information
@@ -209,6 +220,7 @@ class SKFlatMaker : public edm::EDAnalyzer
   edm::EDGetTokenT< bool > BadPFMuonDzFilter_token;
 
   edm::EDGetTokenT< std::vector<pat::Muon> >            MuonToken;
+  edm::EDGetTokenT< std::vector<pat::Tau> >             TauToken;
   edm::EDGetTokenT< edm::View<pat::Electron> >          ElectronToken;
   edm::EDGetTokenT< edm::View<pat::Photon> >            PhotonToken;
   edm::EDGetTokenT< std::vector<pat::Jet> >             JetToken;
@@ -216,6 +228,7 @@ class SKFlatMaker : public edm::EDAnalyzer
   edm::EDGetTokenT< std::vector<pat::Jet> >             FatJetToken;
   edm::EDGetTokenT< reco::GenJetCollection >            genFatJetToken;
   edm::EDGetTokenT< std::vector<pat::MET> >             MetToken;
+  edm::EDGetTokenT< std::vector<pat::MET> >             PuppiMetToken;
 
   edm::EDGetTokenT< LHEEventProduct >               LHEEventProductToken;
   edm::EDGetTokenT< LHEEventProduct >               LHEEventProductSourceToken;
@@ -227,8 +240,10 @@ class SKFlatMaker : public edm::EDAnalyzer
   edm::EDGetTokenT< edm::TriggerResults >          METFilterResultsToken_RECO;
   
   edm::EDGetTokenT< double >                          RhoToken;
+  edm::EDGetTokenT< double >                          RhoNCToken;
   edm::EDGetTokenT< std::vector<reco::Conversion> >   ConversionsToken;
   edm::EDGetTokenT< std::vector< reco::GsfTrack > >   GsfTrackToken;
+  edm::EDGetTokenT< BXVector<l1t::EGamma> >           L1EGToken;
   
   edm::EDGetTokenT< edm::TriggerResults >                          TriggerToken;
   edm::EDGetTokenT< edm::TriggerResults >                          TriggerTokenPAT;
@@ -281,10 +296,12 @@ class SKFlatMaker : public edm::EDAnalyzer
   bool theStorePriVtxFlag;                // Yes or No to store primary vertex
   bool theStoreJetFlag;                // Yes or No to store Jet
   bool theStoreFatJetFlag;                // Yes or No to store FatJet
-  bool theStoreMETFlag;                // Yes or No to store MET 
+  bool theStoreMETFlag;                // Yes or No to store MET
+  bool theStorePuppiMETFlag;                // Yes or No to store Puppi MET
   bool theStoreHLTReportFlag;             // Yes or No to store HLT reuslts (list of triggers fired)
   bool theStoreHLTObjectFlag;
   bool theStoreMuonFlag;
+  bool theStoreTauFlag;
   bool theStoreElectronFlag;
   bool theStoreLHEFlag;
   bool theStoreGENFlag;
@@ -338,6 +355,7 @@ class SKFlatMaker : public edm::EDAnalyzer
   double chargedHadronEt;
   double neutralHadronEt;
   float Rho;
+  float RhoNC;
   
   int Nelectrons;
   
@@ -377,18 +395,12 @@ class SKFlatMaker : public edm::EDAnalyzer
   vector<float> jet_area;
   vector<int> jet_partonFlavour;
   vector<int> jet_hadronFlavour;
-  vector<float> jet_CSVv2;
   vector<float> jet_DeepCSV;
-  vector<float> jet_CvsL;
-  vector<float> jet_CvsB;
-  vector<float> jet_DeepFlavour_b;
-  vector<float> jet_DeepFlavour_bb;
-  vector<float> jet_DeepFlavour_lepb;
-  vector<float> jet_DeepFlavour_c;
-  vector<float> jet_DeepFlavour_uds;
-  vector<float> jet_DeepFlavour_g;
-  vector<float> jet_DeepCvsL;
-  vector<float> jet_DeepCvsB;
+  vector<float> jet_DeepCSV_CvsL;
+  vector<float> jet_DeepCSV_CvsB;
+  vector<float> jet_DeepFlavour;
+  vector<float> jet_DeepFlavour_CvsL;
+  vector<float> jet_DeepFlavour_CvsB;
   vector<float> jet_chargedHadronEnergyFraction;
   vector<float> jet_neutralHadronEnergyFraction;
   vector<float> jet_neutralEmEnergyFraction;
@@ -412,10 +424,10 @@ class SKFlatMaker : public edm::EDAnalyzer
   vector<float> jet_JECFull;
   vector<int> jet_GenHFHadronMatcher_flavour;
   vector<int> jet_GenHFHadronMatcher_origin;
-  vector<float> jet_bjetNN_corr;
-  vector<float> jet_bjetNN_res;
-  vector<float> jet_cjetNN_corr;
-  vector<float> jet_cjetNN_res;
+  vector<float> jet_bJetNN_corr;
+  vector<float> jet_bJetNN_res;
+  vector<float> jet_cJetNN_corr;
+  vector<float> jet_cJetNN_res;
 
   //==== JEC
   JetCorrectionUncertainty *jet_jecUnc;
@@ -451,18 +463,21 @@ class SKFlatMaker : public edm::EDAnalyzer
   vector<float> fatjet_area;
   vector<int> fatjet_partonFlavour;
   vector<int> fatjet_hadronFlavour;
-  vector<float> fatjet_CSVv2;
   vector<float> fatjet_DeepCSV;
-  vector<float> fatjet_CvsL;
-  vector<float> fatjet_CvsB;
-  vector<float> fatjet_DeepFlavour_b;
-  vector<float> fatjet_DeepFlavour_bb;
-  vector<float> fatjet_DeepFlavour_lepb;
-  vector<float> fatjet_DeepFlavour_c;
-  vector<float> fatjet_DeepFlavour_uds;
-  vector<float> fatjet_DeepFlavour_g;
-  vector<float> fatjet_DeepCvsL;
-  vector<float> fatjet_DeepCvsB;
+  vector<float> fatjet_DeepCSV_CvsL;
+  vector<float> fatjet_DeepCSV_CvsB;
+  vector<float> fatjet_particleNet_TvsQCD;
+  vector<float> fatjet_particleNet_WvsQCD;
+  vector<float> fatjet_particleNet_ZvsQCD;
+  vector<float> fatjet_particleNet_HbbvsQCD;
+  vector<float> fatjet_particleNet_HccvsQCD;
+  vector<float> fatjet_particleNet_H4qvsQCD;
+  vector<float> fatjet_particleNet_QCD;
+  //vector<float> fatjet_particleNet_mass;
+  vector<float> fatjet_particleNetMD_Xbb;
+  vector<float> fatjet_particleNetMD_Xcc;
+  vector<float> fatjet_particleNetMD_Xqq;
+  vector<float> fatjet_particleNetMD_QCD;
   vector<bool> fatjet_tightJetID;
   vector<bool> fatjet_tightLepVetoJetID;
   vector<int> fatjet_partonPdgId;
@@ -571,6 +586,20 @@ class SKFlatMaker : public edm::EDAnalyzer
   vector<float> electron_hcalPFClusterIso;
   vector<ULong64_t> electron_pathbits;
   vector<ULong64_t> electron_filterbits;
+  vector<float> electron_l1et;
+
+
+  //=== Tau 
+  vector<float> tau_phi;
+  vector<float> tau_eta;
+  vector<float> tau_pt;
+  vector<float> tau_mass;
+  vector<float> tau_dz;
+  vector<float> tau_dxy;
+  vector<int>   tau_decaymode;
+  vector<int>   tau_charge;
+  vector<unsigned int> tau_IDBit;
+  vector<bool>  tau_idDecayModeNewDMs;  
 
   //==== Muon
 
@@ -585,6 +614,8 @@ class SKFlatMaker : public edm::EDAnalyzer
   vector<unsigned int> muon_TypeBit;
   vector<unsigned int> muon_IDBit;
   vector<bool> muon_ishighpt;
+  vector<bool> muon_ismedium_hip;
+  vector<bool> muon_ismedium_nohip;
   vector<float> muon_dB;
   vector<float> muon_phi;
   vector<float> muon_eta;
@@ -755,15 +786,26 @@ class SKFlatMaker : public edm::EDAnalyzer
   float pfMET_Type1_PhiCor_pt;
   float pfMET_Type1_PhiCor_phi;
   float pfMET_Type1_PhiCor_SumEt;
-  vector<float> pfMET_pt_shifts;
-  vector<float> pfMET_phi_shifts;
-  vector<float> pfMET_SumEt_shifts;
   vector<float> pfMET_Type1_pt_shifts;
   vector<float> pfMET_Type1_phi_shifts;
   vector<float> pfMET_Type1_SumEt_shifts;
   vector<float> pfMET_Type1_PhiCor_pt_shifts;
   vector<float> pfMET_Type1_PhiCor_phi_shifts;
   vector<float> pfMET_Type1_PhiCor_SumEt_shifts;
+
+  //==== Puppi MET
+  float PuppiMET_pt;
+  float PuppiMET_phi;
+  float PuppiMET_SumEt;
+  float PuppiMET_Type1_pt;
+  float PuppiMET_Type1_phi;
+  float PuppiMET_Type1_SumEt;
+  float PuppiMET_Type1_PhiCor_pt;
+  float PuppiMET_Type1_PhiCor_phi;
+  float PuppiMET_Type1_PhiCor_SumEt;
+  vector<float> PuppiMET_Type1_pt_shifts;
+  vector<float> PuppiMET_Type1_phi_shifts;
+  vector<float> PuppiMET_Type1_SumEt_shifts;
 
 };
 #endif

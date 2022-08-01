@@ -8,6 +8,7 @@ SKFlatMaker = cms.EDAnalyzer("SKFlatMaker",
 
   # -- Object Tags -- #
   Muon = cms.untracked.InputTag("slimmedMuons"),
+  Tau = cms.untracked.InputTag("slimmedTaus"),
   Electron = cms.untracked.InputTag("slimmedElectrons"),
   Photon = cms.untracked.InputTag("slimmedPhotons"),
   Jet = cms.untracked.InputTag("slimmedJets"),
@@ -15,12 +16,14 @@ SKFlatMaker = cms.EDAnalyzer("SKFlatMaker",
   FatJet = cms.untracked.InputTag("slimmedJetsAK8"),
   GenFatJet = cms.untracked.InputTag("slimmedGenJetsAK8"),
   MET = cms.InputTag("slimmedMETs"),
+  PuppiMET = cms.InputTag("slimmedMETsPuppi"),
   LHEEventProduct = cms.untracked.InputTag("externalLHEProducer"),
   LHERunInfoProduct = cms.untracked.InputTag("externalLHEProducer"),
   GenParticle = cms.untracked.InputTag("genParticles"),
 
   # -- electron information -- #
   rho = cms.untracked.InputTag("fixedGridRhoFastjetAll"),
+  rhoNC = cms.untracked.InputTag("fixedGridRhoFastjetCentralNeutral"),
   conversionsInputTag = cms.untracked.InputTag("allConversions"),
   GsfTrack = cms.untracked.InputTag("electronGsfTracks"),
   electron_EA_NHandPh_file = cms.untracked.FileInPath("RecoEgamma/ElectronIdentification/data/Fall17/effAreaElectrons_cone03_pfNeuHadronsAndPhotons_94X.txt"),
@@ -58,7 +61,6 @@ SKFlatMaker = cms.EDAnalyzer("SKFlatMaker",
   # -- MET information -- #
   METFilterResults_PAT = cms.InputTag("TriggerResults", "", "PAT"),
   METFilterResults_RECO = cms.InputTag("TriggerResults", "", "RECO"),
-  pfMET = cms.untracked.InputTag("pfMet"),
      
   # -- Trigger -- #
   TriggerResults = cms.untracked.InputTag("TriggerResults", "", "HLT"),
@@ -75,12 +77,14 @@ SKFlatMaker = cms.EDAnalyzer("SKFlatMaker",
 
   # -- Store Flags -- #
   StoreMuonFlag = cms.untracked.bool(True),
+  StoreTauFlag = cms.untracked.bool(True),
   StoreElectronFlag = cms.untracked.bool(True),
   StoreCalibElectronFlag = cms.untracked.bool(True),
   StorePhotonFlag = cms.untracked.bool(True),
   StoreJetFlag = cms.untracked.bool(True),
   StoreFatJetFlag = cms.untracked.bool(True),
   StoreMETFlag = cms.untracked.bool(True),
+  StorePuppiMETFlag = cms.untracked.bool(True),
   StoreLHEFlag = cms.untracked.bool(True),
   StoreGENFlag = cms.untracked.bool(True),
   KeepAllGen = cms.untracked.bool(True),   
